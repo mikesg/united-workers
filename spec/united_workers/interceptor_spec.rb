@@ -1,21 +1,9 @@
 #encoding: utf-8
 
 require 'spec_helper'
+require 'queue_helper'
 
 describe UnitedWorkers::Interceptor do
-  def synchronous_queue
-    queue = double
-    def queue.subscribe(*args, &block)
-      @block = block
-    end
-    def queue.publish(message, params = {})
-      @block.call(delivery_info, nil, message)
-    end
-    allow(queue).to receive(:delivery_info).and_return(double.as_null_object)
-    allow(queue).to receive(:channel).and_return(double.as_null_object)
-    queue
-  end
-
   it 'subscribes to external queue' do
     queue = double
     expect(UnitedWorkers::Queue).to receive(:get).with(:external).and_return(queue)
