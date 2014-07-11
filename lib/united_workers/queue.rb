@@ -1,0 +1,2 @@
+class UnitedWorkers::Queue
+end

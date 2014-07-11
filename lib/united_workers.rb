@@ -1,4 +1,4 @@
-require "united_workers/version"
+Dir["#{File.dirname(__FILE__)}/united_workers/*.rb"].each { |file| require file }
 
 module UnitedWorkers
 end
