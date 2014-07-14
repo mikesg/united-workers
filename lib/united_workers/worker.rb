@@ -12,7 +12,7 @@ class UnitedWorkers::Worker
 
   def process(message)
     UnitedWorkers::Queue.get(@monitor_queue).publish({task_id: message[:task_id], pid: Process.pid, status: 'started'}, persistent: true)
-
-    UnitedWorkers::Queue.get(@monitor_queue).publish({task_id: message[:task_id], pid: Process.pid, status: 'finished'}, persistent: true)
+    result = @coroutine.call(message)
+    UnitedWorkers::Queue.get(@monitor_queue).publish({task_id: message[:task_id], pid: Process.pid, status: 'finished', result: result}, persistent: true)
   end
 end
