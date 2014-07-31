@@ -19,6 +19,8 @@ module UnitedWorkers
       ch = channel
       x = ch.fanout(channel_id)
       x.publish(pack(message))
+      ch.close
+      ch.connection.close
     end
 
     def self.channel
