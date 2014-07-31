@@ -1,3 +1,4 @@
 .ruby*
 .rspec
 *.swp
+log/*

@@ -11,14 +11,17 @@ describe UnitedWorkers::Monitor do
   describe 'Messages' do
     before :each do
       queue = synchronous_queue
-      allow(UnitedWorkers::Queue).to receive(:get).with(:monitor).and_return(queue)
+      allow(UnitedWorkers::Queue).to receive(:new_fanout_queue).with(:monitor).and_return(queue)
+      allow(UnitedWorkers::Queue).to receive(:fanout_publish) do |channel_id, message|
+        queue.publish(message)
+      end
       UnitedWorkers::Monitor.launch(:monitor)
     end
 
     context "starting a monitor" do
       it 'publishes a message on the monitor queue' do
         called = false
-        UnitedWorkers::Queue.get(:monitor).subscribe do |_, __, message|
+        UnitedWorkers::Queue.new_fanout_queue(:monitor).subscribe do |_, __, message|
           called = true
           expect(message[:type]).to be :start_monitor
           expect(message[:pid]).to be :a_pid
@@ -49,14 +52,14 @@ describe UnitedWorkers::Monitor do
 
   describe '.launch' do
     it 'raises if called twice' do
-      expect(UnitedWorkers::Queue).to receive(:get).with(:monitor).and_return(synchronous_queue)
+      expect(UnitedWorkers::Queue).to receive(:new_fanout_queue).with(:monitor).and_return(synchronous_queue)
       UnitedWorkers::Monitor.launch(:monitor)
       expect { UnitedWorkers::Monitor.launch(:monitor) }.to raise_error
     end
 
     it 'subcscribes to the monitor queue' do
       queue = double
-      expect(UnitedWorkers::Queue).to receive(:get).with(:monitor).and_return(queue)
+      expect(UnitedWorkers::Queue).to receive(:new_fanout_queue).with(:monitor).and_return(queue)
       expect(queue).to receive(:subscribe)
       UnitedWorkers::Monitor.launch(:monitor)
     end
