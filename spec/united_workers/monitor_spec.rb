@@ -28,7 +28,7 @@ describe UnitedWorkers::Monitor do
           expect(message[:task_id]).to be :task123
         end
 
-        UnitedWorkers::Monitor.start_monitor(:a_pid, :task123)
+        UnitedWorkers::Monitor.start_monitor(:monitor, :a_pid, :task123)
 
         expect(called).to be true
       end
@@ -36,16 +36,16 @@ describe UnitedWorkers::Monitor do
       it 'starts a new monitor thread' do
         expect(UnitedWorkers::Monitor::MonitorThread).to receive(:new).and_call_original
 
-        UnitedWorkers::Monitor.start_monitor(:a_pid, :task123)
+        UnitedWorkers::Monitor.start_monitor(:monitor, :a_pid, :task123)
       end
     end
 
     context 'stopping a monitor' do
       it 'calls stop of the thread' do
         expect_any_instance_of(UnitedWorkers::Monitor::MonitorThread).to receive(:stop)
-        UnitedWorkers::Monitor.start_monitor(:a_pid, :task123)
+        UnitedWorkers::Monitor.start_monitor(:monitor, :a_pid, :task123)
 
-        UnitedWorkers::Monitor.stop_monitor(:task123)
+        UnitedWorkers::Monitor.stop_monitor(:monitor, :task123)
       end
     end
   end
