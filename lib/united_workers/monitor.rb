@@ -75,7 +75,7 @@ class UnitedWorkers::Monitor
           UnitedWorkers::Logger.log "polling"
           if !check_pid
             @running = false
-            UnitedWorkers::Queue.fanout_publish(@channel_id, {type: :task_end, status: :killed, task: @task_id})
+            UnitedWorkers::Queue.fanout_publish(@channel_id, {type: :task_end, status: :killed, task_id: @task_id, pid: @pid})
             UnitedWorkers::Logger.log "Stopping monitor thread on #{@pid}/#{@task_id} - process not alive"
           end
           sleep @poll_timeout_in_seconds
