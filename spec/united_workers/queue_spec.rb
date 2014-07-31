@@ -6,7 +6,6 @@ describe UnitedWorkers::Queue do
   def rabbit(queue)
     conn = double
     channel = double
-
   end
 
   before :each do
@@ -16,7 +15,7 @@ describe UnitedWorkers::Queue do
   describe '.get' do
     it 'creates a queue based on config' do
       queue = double
-      allow(Bunny).to receive(:new).and_return rabbit
+      allow(Bunny).to receive(:new).and_return rabbit(queue)
     end
   end
 end

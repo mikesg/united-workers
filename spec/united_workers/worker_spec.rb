@@ -10,7 +10,7 @@ describe UnitedWorkers::Worker do
 
     expect(work_queue).to receive(:subscribe)
 
-    UnitedWorkers::Worker.new(:work, :monitor) { |task_id, params| }
+    UnitedWorkers::Worker.new(:work, :monitor, ->(task_id, params) {}, ->() {})
   end
 
   context 'monitor queue notifications' do
@@ -18,7 +18,8 @@ describe UnitedWorkers::Worker do
       work_queue = synchronous_queue
       allow(UnitedWorkers::Queue).to receive(:get).with(:work).and_return work_queue
       monitor_queue = synchronous_queue
-      allow(UnitedWorkers::Queue).to receive(:get).with(:monitor).and_return monitor_queue
+      allow(UnitedWorkers::Queue).to receive(:new_fanout_queue).with(:monitor).and_return monitor_queue
+      allow(UnitedWorkers::Queue).to receive(:fanout_publish) { |ch, msg| monitor_queue.publish(msg) }
 
       target = double
       def target.called(message)
@@ -32,9 +33,16 @@ describe UnitedWorkers::Worker do
       monitor_queue.subscribe do |_, __, message|
         target.called(message)
       end
-      UnitedWorkers::Worker.new(:work, :monitor) {
-        {payload: "A Laptop structure"}
-      }
+      result = double
+      def result.error?
+        false
+      end
+
+      def result.payload
+        "A Laptop structure"
+      end
+
+      UnitedWorkers::Worker.new(:work, :monitor, ->(msg) { result }, ->(_,_,_) {} )
       @target, @work_queue, @monitor_queue = target, work_queue, monitor_queue
     end
 
@@ -42,34 +50,28 @@ describe UnitedWorkers::Worker do
       statuses = []
       expect(@target).to receive(:called).twice do |msg|
         expect(msg[:task_id]).to eq 'task1'
-        statuses << msg[:status]
-        expect(msg[:pid]).to eq Process.pid
+        statuses << msg[:type]
       end
       @work_queue.publish({task_id: 'task1', params: {}}, persistent: true)
-      expect(statuses).to include('started')
+      expect(statuses).to include(:start_monitor)
     end
 
-    it "notifies the monitor queue that it has finished and attaches block result as message" do
+    it "notifies the monitor queue that it has finished" do
       statuses = []
       expect(@target).to receive(:called).twice do |msg|
         expect(msg[:task_id]).to eq 'task1'
-        statuses << msg[:status]
-        expect(msg[:pid]).to eq Process.pid
-        if (msg[:status] == 'finished')
-          expect(msg[:result]).to eq({payload: "A Laptop structure"})
-        end
+        statuses << msg[:type]
       end
       @work_queue.publish({task_id: 'task1', params: {}}, persistent: true)
-      expect(statuses).to include('finished')
+      expect(statuses).to include(:stop_monitor)
     end
 
 
     it "executes the code block passed" do
       coroutine = double
       expect(coroutine).to receive(:called)
-      UnitedWorkers::Worker.new(:work, :monitor) do
-        coroutine.called
-      end
+      result = double(:error? => false)
+      UnitedWorkers::Worker.new(:work, :monitor, ->(msg) { coroutine.called; result }, ->(_,_,_) {})
       @work_queue.publish({task_id: 'task1', params: {}}, persistent: true)
     end
   end
