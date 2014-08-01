@@ -4,9 +4,6 @@ require 'yaml'
 
 module UnitedWorkers
   class Queue
-    def self.get(identifier)
-    end
-
     def self.new_fanout_queue(channel_id)
       ch = channel
       x = ch.fanout(channel_id)
