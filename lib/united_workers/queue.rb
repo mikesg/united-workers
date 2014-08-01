@@ -4,6 +4,25 @@ require 'yaml'
 
 module UnitedWorkers
   class Queue
+    def self.subscribe(queue_identifier, block_thread = false)
+      raise "usage: subscribe(queue_id) { |message| ... }" if !block_given?
+      queue = channel.queue(queue_identifier, durable: true)
+      queue.channel.prefetch(1)
+      queue.subscribe(ack: true, block: block_thread) do |delivery_info, properties, message|
+        yield unpack(message)
+        queue.channel.ack(delivery_info.delivery_tag)
+      end
+    end
+
+    def self.publish(queue_identifier, message)
+      queue = channel.queue(queue_identifier, durable: true)
+      queue.publish(pack(message), persistent: true)
+      queue.channel.tap do |ch|
+        ch.close
+        ch.connection.close
+      end
+    end
+
     def self.new_fanout_queue(channel_id)
       ch = channel
       x = ch.fanout(channel_id)
