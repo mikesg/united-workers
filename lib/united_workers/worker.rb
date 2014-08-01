@@ -4,10 +4,10 @@ class UnitedWorkers::Worker
     @monitor_queue = monitor_queue
     @message_routine = message_routine
     @success_routine = success_routine
-    queue = UnitedWorkers::Queue.get(work_queue)
-    queue.subscribe(ack: true, block: true) do |delivery_info, properties, message|
-      queue.channel.ack(delivery_info.delivery_tag)
+    UnitedWorkers::Queue.subscribe(work_queue, true) do |message|
+      UnitedWorkers::Logger.log("Worker received message:#{message}")
       process(message)
+      UnitedWorkers::Logger.log("Worker processed message:#{message}")
     end
   end
 
