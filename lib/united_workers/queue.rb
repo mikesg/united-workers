@@ -9,8 +9,8 @@ module UnitedWorkers
       queue = channel.queue(queue_identifier, durable: true)
       queue.channel.prefetch(1)
       queue.subscribe(ack: true, block: block_thread) do |delivery_info, properties, message|
-        yield unpack(message)
         queue.channel.ack(delivery_info.delivery_tag)
+        yield unpack(message)
       end
     end
 
