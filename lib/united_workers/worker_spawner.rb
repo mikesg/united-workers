@@ -20,12 +20,16 @@ module UnitedWorkers
     def self.register(bootstrap, pid, channel_id)
       UnitedWorkers::Queue.new_fanout_queue(channel_id).tap do |queue|
         queue.subscribe do |_, __, message|
+          running = true
           m = UnitedWorkers::Queue.unpack(message)
-          if m[:type] == :task_end && m[:status] == :killed && m[:pid] == pid && m[:task_id] == "process_#{pid}"
+          if running && m[:type] == :task_end && m[:status] == :killed && m[:pid] == pid && m[:task_id] == "process_#{pid}"
             UnitedWorkers::Logger.log("A worker with PID #{pid} was killed. Restarting")
             launch(bootstrap, channel_id)
             queue.channel.close
             queue.channel.connection.close
+          elsif m[:type] == :shutdown
+            p "Shutting down spawner"
+            running = false
           end
         end
       end
