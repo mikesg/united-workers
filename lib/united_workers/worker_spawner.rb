@@ -2,30 +2,17 @@
 
 module UnitedWorkers
   class WorkerSpawner
-    def self.launch_strategy
-      @launch_strategy || :process
-    end
-
-    def self.launch_strategy=(strategy)
-      @launch_strategy = strategy
-    end
-
     def self.start(bootstrap, instance_count, channel_id)
       instance_count.times { launch(bootstrap, channel_id) }
     end
 
     def self.launch(bootstrap, channel_id)
-      if launch_strategy == :thread
-        pid = Process.pid
-        Thread.new { bootstrap.call }
-      else
-        pid = fork do
-          UnitedWorkers::Monitor.start_monitor(channel_id, Process.pid, "process_#{Process.pid}")
-          bootstrap.call
-          UnitedWorkers::Monitor.stop_monitor(channel_id, "process_#{Process.pid}")
-        end
-        Process.detach pid
+      pid = fork do
+        UnitedWorkers::Monitor.start_monitor(channel_id, Process.pid, "process_#{Process.pid}")
+        bootstrap.call
+        UnitedWorkers::Monitor.stop_monitor(channel_id, "process_#{Process.pid}")
       end
+      Process.detach pid
       register(bootstrap, pid, channel_id)
       pid
     end
