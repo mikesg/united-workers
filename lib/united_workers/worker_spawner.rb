@@ -29,7 +29,11 @@ module UnitedWorkers
             queue.channel.connection.close
           elsif m[:type] == :shutdown
             UnitedWorkers::Logger.log("Shutting down spawner")
+            was_running = @running
             @running = false
+            if was_running
+              UnitedWorkers::Queue.fanout_publish(channel_id, {type: :shutdown_workers})
+            end
           end
         end
       end
