@@ -72,7 +72,7 @@ class UnitedWorkers::Monitor
       @running = true
       Thread.new do
         while @running do
-          UnitedWorkers::Logger.log "polling"
+          #UnitedWorkers::Logger.log "polling"
           if !check_pid
             @running = false
             UnitedWorkers::Queue.fanout_publish(@channel_id, {type: :task_end, status: :killed, task_id: @task_id, pid: @pid})
